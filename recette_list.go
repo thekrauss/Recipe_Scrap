@@ -56,3 +56,15 @@ func extraireListeRecette(url string) []map[string]interface{} {
 	return listeResultats
 
 }
+
+// verifie si une recette existe déjà dans la liste
+func recetteExiste(recette map[string]interface{}, listeRecettes []map[string]interface{}) bool {
+	url := recette["url"].(string)
+
+	for _, r := range listeRecettes {
+		if r["url"].(string) == url {
+			return true
+		}
+	}
+	return false
+}

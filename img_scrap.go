@@ -8,11 +8,11 @@ import (
 	"strings"
 )
 
-// Téléchargement et sauvegarde d'une image depuis une URL
+// telechargement et sauvegarde d'une image depuis une URL
 func telechargerEtSauvegarderImage(url string) {
 	response, err := http.Get(url)
 	if err != nil {
-		fmt.Println("Erreur lors du téléchargement de l'image :", err)
+		fmt.Println("Error downloading image:", err)
 		return
 	}
 	defer response.Body.Close()
@@ -25,13 +25,13 @@ func telechargerEtSauvegarderImage(url string) {
 
 	file, err := os.Create(filename)
 	if err != nil {
-		fmt.Println("Erreur lors de la création du fichier :", err)
+		fmt.Println("Error creating file:", err)
 		return
 	}
 	defer file.Close()
 
 	_, err = io.Copy(file, response.Body)
 	if err != nil {
-		fmt.Println("Erreur lors de la sauvegarde de l'image :", err)
+		fmt.Println("Error saving image:", err)
 	}
 }

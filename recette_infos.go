@@ -43,6 +43,12 @@ func extraireInfosRecette(urlRecette string) map[string]interface{} {
 		etapes = append(etapes, nettoyerTexte(e.Text))
 	})
 
+	var licenceMessage string
+	var licenceValide bool
+	c.OnHTML("footer#license", func(e *colly.HTMLElement) {
+		licenceValide, licenceMessage = verifierLicence(e)
+	})
+
 	//  l'URL
 	err := c.Visit(urlRecette)
 	if err != nil {
@@ -61,6 +67,10 @@ func extraireInfosRecette(urlRecette string) map[string]interface{} {
 		},
 		"ingredients": ingredients,
 		"etapes":      etapes,
+		"licence": map[string]interface{}{
+			"valide":  licenceValide,
+			"message": licenceMessage,
+		},
 	}
 
 	return recette
