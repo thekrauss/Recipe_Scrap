@@ -15,7 +15,7 @@ func main() {
 
 	// afficher les recettes extraites
 	for _, recette := range list_recette {
-		fmt.Printf("Titre: %s\nURL: %s\nImage: %s\n\n", recette["titre"], recette["url"], recette["url_image"])
+		fmt.Printf("Titre: %s\nURL: %s\nImage: %\nReccete: %s\n\n", recette["titre"], recette["url"], recette["url_image"], recette)
 	}
 
 }

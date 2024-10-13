@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"strings"
 
@@ -9,65 +8,59 @@ import (
 	"github.com/gocolly/colly"
 )
 
-func extraireInfosRecette(url string) map[string]interface{} {
+func extraireInfosRecette(urlRecette string) map[string]interface{} {
 	recette := make(map[string]interface{})
 
 	c := colly.NewCollector()
 
-	c.OnHTML("footer#license", func(l *colly.HTMLElement) {
-		licenceValid := verifierLicence(l)
-		if licenceValid {
-			fmt.Println("Licence valide")
-		} else {
-			fmt.Println("La licence n'est pas CC0 ou Domaine public")
+	//  titre
+	var titre string
+	c.OnHTML("h1", func(e *colly.HTMLElement) {
+		titre = nettoyerTexte(e.Text)
+	})
+
+	//  informations de la recette (durée, cuisson, repos)
+	var dureePreparation, dureeCuisson, dureeRepos, methodeCuisson string
+	c.OnHTML("p#recipe-infos", func(e *colly.HTMLElement) {
+		dureePreparation = extraireDureeRecette(e, "duree_preparation")
+		dureeCuisson = extraireDureeRecette(e, "duree_cuisson")
+		dureeRepos = extraireDureeRecette(e, "duree_repos")
+		methodeCuisson = e.DOM.Find("a").Text()
+	})
+
+	//  ingrédients
+	var ingredients []string
+	c.OnHTML("div#ingredients li.ingredient", func(e *colly.HTMLElement) {
+		ingredient := nettoyerTexte(e.Text)
+		if e.DOM.Find("i").Length() == 0 {
+			ingredients = append(ingredients, ingredient)
 		}
 	})
 
-	// Extraction du titre de la recette
-	c.OnHTML("h1", func(h *colly.HTMLElement) {
-		titre := nettoyerTexte(h.DOM.Contents().Nodes[0].Data)
-		fmt.Println("Titre: ", titre)
-		recette["titre"] = titre
+	//  des étapes de préparation
+	var etapes []string
+	c.OnHTML("div#preparation p, div#preparation li", func(e *colly.HTMLElement) {
+		etapes = append(etapes, nettoyerTexte(e.Text))
 	})
 
-	// Extraction des informations de préparation, cuisson et repos
-	c.OnHTML("p#recipe-infos", func(e *colly.HTMLElement) {
-		dureePreparation := extraireDureeRecette(e, "duree_preparation")
-		dureeCuisson := extraireDureeRecette(e, "duree_cuisson")
-		dureeRepos := extraireDureeRecette(e, "duree_repos")
+	//  l'URL
+	err := c.Visit(urlRecette)
+	if err != nil {
+		log.Printf("Failed to visit %s: %v", urlRecette, err)
+		return nil
+	}
 
-		methodCuissonBruit := e.DOM.Find("a").Text()
-		methodeCuisson := nettoyerTexte(methodCuissonBruit)
-
-		infos := map[string]string{
+	// map recette
+	recette = map[string]interface{}{
+		"titre": titre,
+		"infos": map[string]string{
 			"duree_preparation": dureePreparation,
 			"duree_cuisson":     dureeCuisson,
 			"duree_repos":       dureeRepos,
-			"methode_cuisson":   methodeCuisson,
-		}
-
-		recette["infos"] = infos
-		fmt.Println("Infos: ", infos)
-	})
-
-	// Extraction de la préparation
-	c.OnHTML("div#preparation", func(p *colly.HTMLElement) {
-		preparations := extrairePreparation(p)
-		recette["preparations"] = preparations
-		fmt.Println("Préparations: ", preparations)
-	})
-
-	// Extraction des ingrédients
-	c.OnHTML("div#ingredients", func(e *colly.HTMLElement) {
-		ingredients := extraireIngredients(e)
-		recette["ingredients"] = ingredients
-		fmt.Println("Ingrédients:", ingredients)
-	})
-
-	// Lancer la visite de la page
-	err := c.Visit(url)
-	if err != nil {
-		log.Fatal(err)
+			"methode_cuisson":   nettoyerTexte(methodeCuisson),
+		},
+		"ingredients": ingredients,
+		"etapes":      etapes,
 	}
 
 	return recette
@@ -75,21 +68,17 @@ func extraireInfosRecette(url string) map[string]interface{} {
 
 // supprime les espaces et caractères non imprimables
 func nettoyerTexte(t string) string {
-	// Remplace les espaces non imprimables (comme &nbsp;) par des espaces normaux
-	t = strings.ReplaceAll(t, "\u00a0", " ")
-	// Supprime les espaces multiples par un seul espace
-	t = strings.Join(strings.Fields(t), " ")
-	return strings.TrimSpace(t)
+	return strings.TrimSpace(strings.ReplaceAll(strings.ReplaceAll(t, "\xa0", " "), "\n", ""))
 }
 
-// Extrait la durée (préparation, cuisson, etc.) à partir des éléments DOM
+// a durée (préparation, cuisson, etc.)
 func extraireDureeRecette(e *colly.HTMLElement, className string) string {
 	span := e.DOM.Find("span." + className)
 	time := span.Find("time").Text()
 	return nettoyerTexte(time)
 }
 
-// Extrait les ingrédients de la recette
+// ingrédients de la recette
 func extraireIngredients(e *colly.HTMLElement) []string {
 	var ingredients []string
 
@@ -103,7 +92,7 @@ func extraireIngredients(e *colly.HTMLElement) []string {
 	return ingredients
 }
 
-// Extrait la préparation de la recette
+// préparation de la recette
 func extrairePreparation(p *colly.HTMLElement) []string {
 	var preparations []string
 

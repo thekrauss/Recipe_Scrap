@@ -6,9 +6,9 @@ import (
 	"github.com/gocolly/colly"
 )
 
-func extraireListeRecette(url string) []map[string]string {
+func extraireListeRecette(url string) []map[string]interface{} {
 
-	var listeResultats []map[string]string
+	var listeResultats []map[string]interface{}
 	c := colly.NewCollector()
 
 	//les éléments de la liste des recettes
@@ -19,14 +19,32 @@ func extraireListeRecette(url string) []map[string]string {
 			titre := nettoyerTexte(a.Find("strong").Text())
 			urlRecette := a.AttrOr("href", "")
 			imgSrc := a.Find("img").AttrOr("src", "")
+			/*
+				if !strings.HasPrefix(urlRecette, "/") {
+					urlRecette = "/" + urlRecette
+				}
+				if !strings.HasPrefix(imgSrc, "/") {
+					imgSrc = "/" + imgSrc
+				}
+			*/
 
-			recette := map[string]string{
-				"titre":     titre,
-				"url":       urlRecette,
-				"url_image": imgSrc,
+			urlRecette = el.Request.AbsoluteURL(urlRecette)
+			imgSrc = el.Request.AbsoluteURL(imgSrc)
+
+			recette := extraireInfosRecette(urlRecette)
+
+			if recette != nil {
+
+				resultat := map[string]interface{}{
+					"titre":     titre,
+					"url":       urlRecette,
+					"url_image": imgSrc,
+					"recette":   recette,
+				}
+
+				listeResultats = append(listeResultats, resultat)
 			}
 
-			listeResultats = append(listeResultats, recette)
 		})
 
 	})
