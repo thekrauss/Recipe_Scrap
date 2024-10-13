@@ -102,7 +102,7 @@ Les données des recettes sont sauvegardées dans le fichier `recette.json` au f
 - **Filtres avancés** : Ajouter des filtres pour sélectionner les types de recettes à scraper (exemple : pâtisseries, plats principaux).
 - **Interface utilisateur** : Intégrer une interface web pour rendre le scraping plus interactif.
 
-##Contributeurs** : N'hésitez pas à proposer des améliorations via des Pull Requests !
+- **Contributeurs** : N'hésitez pas à proposer des améliorations via des Pull Requests !
 ## Licence
 
 Ce projet est sous licence MIT
